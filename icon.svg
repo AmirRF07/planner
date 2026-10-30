@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#093552"/>
+      <stop offset="50%" stop-color="#0c4a6e"/>
+      <stop offset="100%" stop-color="#082f49"/>
+    </linearGradient>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fde047"/>
+      <stop offset="50%" stop-color="#eab308"/>
+      <stop offset="100%" stop-color="#ca8a04"/>
+    </linearGradient>
+    <linearGradient id="turqGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="100%" stop-color="#0284c7"/>
+    </linearGradient>
+    <linearGradient id="leafGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4ade80"/>
+      <stop offset="100%" stop-color="#16a34a"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#000" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+
+  <!-- Background rounded canvas -->
+  <rect width="512" height="512" rx="110" fill="url(#bgGrad)"/>
+
+  <!-- Persian Islamic Arch motif -->
+  <path d="M 120 400 L 120 250 C 120 160, 256 100, 256 100 C 256 100, 392 160, 392 250 L 392 400 Z" 
+        fill="none" stroke="url(#goldGrad)" stroke-width="6" opacity="0.4" stroke-dasharray="8 6"/>
+
+  <!-- Open Book (History Texts) -->
+  <g filter="url(#shadow)">
+    <!-- Book Spine & Pages -->
+    <path d="M 256 370 C 210 350, 150 352, 110 365 L 110 245 C 150 232, 210 230, 256 250 C 302 230, 362 232, 402 245 L 402 365 C 362 352, 302 350, 256 370 Z" 
+          fill="#f8fafc" stroke="#cbd5e1" stroke-width="3"/>
+    <!-- Page lines -->
+    <path d="M 140 270 Q 185 260 230 275" stroke="#94a3b8" stroke-width="4" stroke-linecap="round"/>
+    <path d="M 140 295 Q 185 285 230 300" stroke="#94a3b8" stroke-width="4" stroke-linecap="round"/>
+    <path d="M 140 320 Q 185 310 230 325" stroke="#94a3b8" stroke-width="4" stroke-linecap="round"/>
+
+    <path d="M 282 275 Q 327 260 372 270" stroke="#94a3b8" stroke-width="4" stroke-linecap="round"/>
+    <path d="M 282 300 Q 327 285 372 295" stroke="#94a3b8" stroke-width="4" stroke-linecap="round"/>
+    <path d="M 282 325 Q 327 310 372 320" stroke="#94a3b8" stroke-width="4" stroke-linecap="round"/>
+  </g>
+
+  <!-- Growing Sprout / Tree of Knowledge (Gamification Forest & History) -->
+  <g filter="url(#shadow)">
+    <!-- Stem -->
+    <path d="M 256 248 Q 256 175 256 160" stroke="#854d0e" stroke-width="8" stroke-linecap="round"/>
+    <!-- Leaves -->
+    <path d="M 256 200 C 230 180, 210 205, 256 220 Z" fill="url(#leafGrad)"/>
+    <path d="M 256 180 C 285 160, 305 185, 256 200 Z" fill="url(#leafGrad)"/>
+    <path d="M 256 160 C 240 130, 272 130, 256 160 Z" fill="#86efac"/>
+  </g>
+
+  <!-- Star / Sun of Wisdom at the top -->
+  <circle cx="256" cy="115" r="14" fill="url(#goldGrad)" filter="url(#shadow)"/>
+  <circle cx="256" cy="115" r="6" fill="#fef08a"/>
+</svg>

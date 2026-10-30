@@ -1,0 +1,21 @@
+{
+  "name": "سامانه هوشمند برنامه‌ریزی تحصیلات تکمیلی تاریخ ایران",
+  "short_name": "برنامه‌ریز تاریخ",
+  "description": "دستیار هوشمند برنامه‌ریزی و ارتقای تسلط تحصیلی کارشناسی ارشد تاریخ ایران در دوره اسلامی",
+  "dir": "rtl",
+  "lang": "fa-IR",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0f172a",
+  "theme_color": "#0c4a6e",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -1,0 +1,1419 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>سامانه هوشمند برنامه‌ریزی پژوهش و تحصیلات تکمیلی تاریخ ایران</title>
+  <!-- تنظیمات وب‌اپلیکیشن پیش‌رونده (PWA) -->
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" type="image/svg+xml" href="icon.svg" />
+  <meta name="theme-color" content="#0c4a6e" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="برنامه‌ریز تاریخ" />
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW registration note:', err));
+      });
+    }
+  </script>
+  <!-- فونت وزیرمتن برای نمایش دقیق متون فارسی و اعداد -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Vazirmatn', 'Tahoma', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#f0f7ff',
+              100: '#e0effe',
+              200: '#bae0fd',
+              500: '#0284c7',
+              600: '#0369a1',
+              700: '#075985',
+              800: '#0c4a6e',
+              900: '#082f49',
+            },
+            persian: {
+              gold: '#b45309',
+              turquoise: '#0f766e',
+              crimson: '#9f1239'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: 'Vazirmatn', Tahoma, sans-serif;
+    }
+    body {
+      background-color: #f8fafc;
+      color: #0f172a;
+      direction: rtl;
+      text-align: right;
+    }
+    .bidi-isolate {
+      unicode-bidi: isolate;
+    }
+    .ltr-inline {
+      direction: ltr;
+      display: inline-block;
+      unicode-bidi: isolate;
+    }
+    @keyframes floatCloud {
+      0% { transform: translateX(0); }
+      50% { transform: translateX(35px); }
+      100% { transform: translateX(0); }
+    }
+    .animate-cloud-float {
+      animation: floatCloud 14s ease-in-out infinite;
+    }
+    @keyframes flutterFly {
+      0%, 100% { transform: translateY(0px) rotate(0deg); }
+      50% { transform: translateY(-7px) rotate(4deg); }
+    }
+    .animate-flutter {
+      animation: flutterFly 3s ease-in-out infinite;
+    }
+    @keyframes gentleHop {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-5px); }
+    }
+    .animate-hop {
+      animation: gentleHop 2s ease-in-out infinite;
+    }
+    /* اسکرول‌بار ظریف */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+    /* استایل اختصاصی چاپ و خروجی PDF برداری استاندارد */
+    @media print {
+      body * {
+        visibility: hidden !important;
+      }
+      #print-container, #print-container * {
+        visibility: visible !important;
+      }
+      #print-container {
+        display: block !important;
+        position: absolute !important;
+        right: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        background: white !important;
+        color: black !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        box-shadow: none !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+      table {
+        page-break-inside: auto;
+        border-collapse: collapse;
+        width: 100%;
+      }
+      tr {
+        page-break-inside: avoid;
+        page-break-after: auto;
+      }
+      thead {
+        display: table-header-group;
+      }
+      .print-page-break {
+        page-break-before: always;
+      }
+      @page {
+        size: A4 portrait;
+        margin: 15mm;
+      }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <!-- نوار وضعیت فوقانی و اعلان‌ها -->
+  <div id="toast-container" class="fixed top-4 left-4 z-50 flex flex-col gap-2 max-w-md w-full pointer-events-none no-print"></div>
+
+  <!-- هدر اصلی برنامه -->
+  <header class="bg-brand-900 text-white shadow-md border-b border-brand-800 no-print sticky top-0 z-30">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-lg bg-persian-turquoise flex items-center justify-center font-bold text-lg shadow-inner border border-teal-400/30">
+          تا
+        </div>
+        <div>
+          <h1 class="text-base md:text-lg font-bold tracking-tight">سامانه هوشمند برنامه‌ریزی تحصیلات تکمیلی تاریخ ایران</h1>
+          <p class="text-xs text-slate-300">گرایش تاریخ ایران دوره اسلامی | برنامه‌ریز قطعی و مشاور هوشمند پژوهشی (هدف: ۱۸ تا ۲۰)</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2 text-xs flex-wrap">
+        <div class="bg-brand-800/80 px-2.5 py-1.5 rounded-md border border-brand-700 flex items-center gap-2">
+          <span class="text-slate-300">امروز (تهران):</span>
+          <span id="header-jalali-date" class="font-bold text-amber-300">---</span>
+        </div>
+        <button id="btn-header-pomodoro" onclick="app.openPomodoroModal()" class="bg-amber-600 hover:bg-amber-500 text-white font-semibold px-2.5 py-1.5 rounded-md shadow-sm transition flex items-center gap-1.5" title="تایمر متمرکز پومودورو و پرورش گیاه">
+          <span>⏱️</span>
+          <span class="hidden sm:inline">پومودورو</span>
+        </button>
+        <button id="btn-toggle-sound" onclick="app.toggleSoundMute()" class="px-2 py-1.5 rounded-md border border-brand-700 bg-brand-800/80 hover:bg-brand-700 text-slate-200 transition" title="کنترل صدای آلارم و هشدارها">
+          <span id="sound-icon">🔊</span>
+        </button>
+        <button id="btn-lan-sync" onclick="app.syncWithLANServer(false)" class="px-2 py-1.5 rounded-md border border-brand-700 bg-brand-800/80 hover:bg-brand-700 text-slate-200 transition flex items-center gap-1" title="همگام‌سازی شبکه محلی با رایانه یا گوشی">
+          <span id="lan-sync-dot" class="w-2 h-2 rounded-full bg-emerald-400"></span>
+          <span class="hidden md:inline text-[11px]">همگام‌سازی شبکه</span>
+        </button>
+        <div id="header-ai-status" class="px-2.5 py-1.5 rounded-md border flex items-center gap-1.5 cursor-pointer bg-brand-800/80 border-brand-700" onclick="app.navigate('settings')" title="وضعیت مدل هوش مصنوعی Gemini">
+          <span class="w-2.5 h-2.5 rounded-full bg-amber-400" id="ai-status-dot"></span>
+          <span id="ai-status-text" class="hidden sm:inline">Gemini</span>
+        </div>
+        <button onclick="app.runScheduleEngineModal()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-3 py-1.5 rounded-md shadow-sm transition flex items-center gap-1.5">
+          <span>برنامه‌ریزی</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- منوی ناوبری تب‌ها -->
+    <nav class="bg-brand-800/60 border-t border-brand-800 overflow-x-auto">
+      <div class="max-w-7xl mx-auto px-4 flex items-center gap-1 text-xs md:text-sm whitespace-nowrap">
+        <button data-nav="dashboard" onclick="app.navigate('dashboard')" class="nav-btn px-3.5 py-2.5 font-medium border-b-2 border-transparent hover:bg-brand-800 transition">۱. پیشخوان (داشبورد)</button>
+        <button data-nav="advisor" onclick="app.navigate('advisor')" class="nav-btn px-3.5 py-2.5 font-medium border-b-2 border-transparent hover:bg-brand-800 transition flex items-center gap-1">
+          <span>۲. مشاور هوشمند (گفتگو)</span>
+          <span id="badge-pending-proposals" class="hidden bg-amber-500 text-slate-950 text-[10px] font-bold px-1.5 py-0.2 rounded-full">0</span>
+        </button>
+        <button data-nav="courses" onclick="app.navigate('courses')" class="nav-btn px-3.5 py-2.5 font-medium border-b-2 border-transparent hover:bg-brand-800 transition">۳. مدیریت دروس و نیمسال</button>
+        <button data-nav="resources" onclick="app.navigate('resources')" class="nav-btn px-3.5 py-2.5 font-medium border-b-2 border-transparent hover:bg-brand-800 transition">۴. منابع و متون تاریخی</button>
+        <button data-nav="calendar" onclick="app.navigate('calendar')" class="nav-btn px-3.5 py-2.5 font-medium border-b-2 border-transparent hover:bg-brand-800 transition">۵. تقویم جلالی و برنامه</button>
+        <button data-nav="tasks" onclick="app.navigate('tasks')" class="nav-btn px-3.5 py-2.5 font-medium border-b-2 border-transparent hover:bg-brand-800 transition">۶. ثبت پیشرفت و تکالیف</button>
+        <button data-nav="assessments" onclick="app.navigate('assessments')" class="nav-btn px-3.5 py-2.5 font-medium border-b-2 border-transparent hover:bg-brand-800 transition">۷. سنجش تسلط و آمادگی امتحان</button>
+        <button data-nav="exports" onclick="app.navigate('exports')" class="nav-btn px-3.5 py-2.5 font-medium border-b-2 border-transparent hover:bg-brand-800 transition">۸. خروجی PDF / Markdown و پشتیبان</button>
+        <button data-nav="settings" onclick="app.navigate('settings')" class="nav-btn px-3.5 py-2.5 font-medium border-b-2 border-transparent hover:bg-brand-800 transition">۹. تنظیمات و Gemini API</button>
+      </div>
+    </nav>
+  </header>
+
+  <!-- محتوای اصلی صفحات -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 py-6 no-print">
+
+    <!-- صفحه ۱: داشبورد جامع تحصیلی -->
+    <section id="view-dashboard" class="view-section space-y-6">
+      <!-- بنر راهنمای شروع برای کاربر جدید در صورت خالی بودن پایگاه داده -->
+      <div id="dashboard-empty-banner" class="hidden bg-white border-2 border-dashed border-brand-500 rounded-xl p-6 shadow-sm">
+        <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div class="space-y-2">
+            <span class="inline-block bg-brand-100 text-brand-800 text-xs font-bold px-2.5 py-1 rounded">خوش آمدید | پایگاه داده محلی آماده است</span>
+            <h2 class="text-lg font-bold text-slate-900">هنوز هیچ درس یا منبعی در سامانه ثبت نشده است</h2>
+            <p class="text-sm text-slate-600 leading-relaxed max-w-3xl">
+              این سامانه هیچ داده پیش‌فرض یا ساختگی را به برنامه شما تحمیل نمی‌کند. برای شروع می‌توانید به صورت طبیعی با <strong>مشاور هوشمند</strong> گفتگو کنید (مثلاً: <em>«این ترم درس تاریخ صفویه ۲ واحد سه شنبه ۱۰ تا ۱۲ دارم، امتحانش ۲۵ دی است و کتاب ایران عصر صفوی ساوری ۳۰۰ صفحه منبع اصلی است»</em>) یا از طریق بخش مدیریت دروس، اطلاعات خود را وارد نمایید.
+            </p>
+          </div>
+          <div class="flex flex-wrap gap-2 shrink-0">
+            <button onclick="app.navigate('advisor')" class="bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold px-4 py-2.5 rounded-lg shadow-sm transition">
+              شروع گفتگو با مشاور هوشمند
+            </button>
+            <button onclick="app.navigate('courses')" class="bg-slate-100 hover:bg-slate-200 text-slate-800 text-sm font-semibold px-4 py-2.5 rounded-lg border border-slate-300 transition">
+              ثبت دستی درس اول
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- بخش گیمیفیکیشن: جنگل زنده و پویا پژوهش و مطالعه من -->
+      <div id="forest-container" class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden transition-all duration-300">
+        <!-- هدر تاشو جنگل -->
+        <div class="px-5 py-3.5 bg-gradient-to-r from-slate-900 via-brand-900 to-slate-900 text-white flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center gap-3">
+            <span class="text-2xl" id="forest-time-icon">🌲</span>
+            <div>
+              <div class="flex items-center gap-2">
+                <h3 class="font-extrabold text-sm md:text-base tracking-tight">جنگل زنده پژوهش و مطالعه من</h3>
+                <span id="forest-time-badge" class="text-[11px] bg-amber-400/20 text-amber-300 border border-amber-400/40 px-2 py-0.5 rounded-full font-medium">روز آفتابی</span>
+                <span id="forest-level-badge" class="text-[11px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 rounded-full font-bold">سطح ۱: آغاز رویش</span>
+              </div>
+              <p class="text-[11px] text-slate-300">با هر نشست پومودورو یک گیاه رشد می‌کند و با افزایش ساعت مطالعه حیوانات ایرانی وارد جنگل می‌شوند</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="app.openPomodoroModal()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition flex items-center gap-1 shadow-sm">
+              <span>🌱 کاشت درخت جدید (شروع پومودورو)</span>
+            </button>
+            <button onclick="app.toggleForestCollapse()" id="btn-toggle-forest" class="text-slate-300 hover:text-white text-xs px-2 py-1.5 rounded hover:bg-white/10 transition" title="بستن یا باز کردن جنگل">
+              ▼
+            </button>
+          </div>
+        </div>
+
+        <!-- بوم گرافیکی تعاملی جنگل و اکوسیستم حیوانات -->
+        <div id="forest-body" class="p-4 bg-slate-50 border-b border-slate-200 space-y-3">
+          <div id="forest-sky-canvas" class="relative w-full h-56 md:h-64 rounded-xl overflow-hidden shadow-inner border border-slate-200">
+            <!-- بوم رندر داینامیک SVG جنگل و حیوانات توسط JS -->
+            <div id="forest-viewport" class="w-full h-full overflow-x-auto overflow-y-hidden"></div>
+            <!-- لایه راهنمای شناور درختان -->
+            <div id="forest-tree-tooltip" class="hidden absolute z-20 pointer-events-none bg-slate-900/90 text-white text-[11px] p-2.5 rounded-lg shadow-xl border border-slate-700 leading-tight"></div>
+          </div>
+
+          <!-- نوار پیشرفت اکوسیستم و خلاصه دستاوردها -->
+          <div class="flex flex-wrap items-center justify-between gap-3 text-xs bg-white p-3 rounded-xl border border-slate-200">
+            <div class="flex items-center gap-4 flex-wrap">
+              <div>درختان کاشته‌شده: <strong class="text-emerald-700 font-bold" id="forest-count-trees">۰</strong> اصله</div>
+              <div>ساعات مطالعه ثبت‌شده با پومودورو: <strong class="text-brand-700 font-bold" id="forest-total-pomodoro-hours">۰ ساعت</strong></div>
+              <div id="forest-animal-status" class="text-slate-600 flex items-center gap-1">
+                <span>اکوسیستم فعال:</span>
+                <span class="font-semibold text-slate-800" id="forest-unlocked-animals">پروانه‌ها و نسیم</span>
+              </div>
+            </div>
+            <div class="flex items-center gap-2 w-full md:w-auto">
+              <span class="text-[11px] text-slate-500" id="forest-next-unlock-label">تا باز شدن سطح ۲ (پرندگان): ۵ ساعت</span>
+              <div class="w-28 bg-slate-200 h-2 rounded-full overflow-hidden">
+                <div id="forest-level-progress-bar" class="bg-gradient-to-l from-emerald-500 to-teal-400 h-full transition-all" style="width: 0%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- کارت‌های شاخص کلیدی بالای داشبورد -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+          <div class="flex items-center justify-between text-xs text-slate-500 mb-1">
+            <span>وظایف امروز</span>
+            <span id="stat-today-date" class="font-medium text-brand-700"></span>
+          </div>
+          <div class="text-2xl font-extrabold text-slate-900" id="stat-today-tasks">۰ از ۰</div>
+          <div class="text-xs text-slate-500 mt-1" id="stat-today-hours">۰ ساعت برنامه‌ریزی‌شده امروز</div>
+        </div>
+
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+          <div class="flex items-center justify-between text-xs text-slate-500 mb-1">
+            <span>ساعت مطالعه هفتگی (برنامه / واقعی)</span>
+            <span class="text-emerald-700 font-semibold" id="stat-weekly-ratio">۰٪</span>
+          </div>
+          <div class="text-2xl font-extrabold text-slate-900" id="stat-weekly-hours">۰ / ۰ ساعت</div>
+          <div class="w-full bg-slate-100 h-2 rounded-full mt-2 overflow-hidden">
+            <div id="stat-weekly-bar" class="bg-brand-600 h-full transition-all" style="width: 0%"></div>
+          </div>
+        </div>
+
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+          <div class="flex items-center justify-between text-xs text-slate-500 mb-1">
+            <span>پیشروی منابع و متون تاریخی</span>
+            <span id="stat-resources-count" class="text-slate-600">۰ منبع</span>
+          </div>
+          <div class="text-2xl font-extrabold text-slate-900" id="stat-pages-progress">۰٪</div>
+          <div class="text-xs text-slate-500 mt-1" id="stat-pages-detail">۰ از ۰ صفحه تکلیف مشخص‌شده</div>
+        </div>
+
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+          <div class="flex items-center justify-between text-xs text-slate-500 mb-1">
+            <span>وظایف عقب‌افتاده / نیازمند بازنگری</span>
+            <span class="text-rose-600 font-semibold">پایش پیوسته</span>
+          </div>
+          <div class="text-2xl font-extrabold text-rose-600" id="stat-overdue-count">۰ مورد</div>
+          <div class="text-xs text-slate-500 mt-1" id="stat-capacity-status">ظرفیت هفتگی: نرمال</div>
+        </div>
+      </div>
+
+      <!-- ردیف اصلی داشبورد -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- ستون راست و میانی: برنامه امروز و وضعیت دروس -->
+        <div class="lg:col-span-2 space-y-6">
+          <!-- برنامه امروز -->
+          <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="px-5 py-3.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+              <h3 class="font-bold text-slate-800 text-sm md:text-base">برنامه عملیاتی امروز و جلسات مطالعه</h3>
+              <button onclick="app.navigate('tasks')" class="text-xs text-brand-600 hover:underline font-medium">مشاهده همه وظایف</button>
+            </div>
+            <div id="dashboard-today-list" class="p-4 divide-y divide-slate-100"></div>
+          </div>
+
+          <!-- وضعیت پیشرفت دروس و شاخص آمادگی امتحان (هدف ۱۸-۲۰) -->
+          <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="px-5 py-3.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+              <div>
+                <h3 class="font-bold text-slate-800 text-sm md:text-base">پیشرفت دروس و شاخص شفاف آمادگی امتحان (هدف: ۱۸ تا ۲۰)</h3>
+                <p class="text-[11px] text-slate-500">تفکیک پوشش صفحات از عملکرد واقعی در آزمون‌های آزمایشی و نقد منبع (بدون تضمین کاذب نمره)</p>
+              </div>
+              <button onclick="app.navigate('courses')" class="text-xs text-brand-600 hover:underline font-medium">مدیریت دروس</button>
+            </div>
+            <div id="dashboard-courses-readiness" class="p-4 space-y-4"></div>
+          </div>
+        </div>
+
+        <!-- ستون چپ: امتحانات پیش رو، کلاس‌ها، مباحث ضعیف و مرورهای فاصله‌دار -->
+        <div class="space-y-6">
+          <!-- امتحانات و ددلاین‌های پیش رو -->
+          <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="px-4 py-3 bg-slate-50 border-b border-slate-200">
+              <h3 class="font-bold text-slate-800 text-sm">امتحانات و مهلت تحویل پژوهش‌ها</h3>
+            </div>
+            <div id="dashboard-upcoming-exams" class="p-4 space-y-3 text-xs"></div>
+          </div>
+
+          <!-- کلاس‌های هفتگی -->
+          <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="px-4 py-3 bg-slate-50 border-b border-slate-200">
+              <h3 class="font-bold text-slate-800 text-sm">برنامه هفتگی کلاس‌های دانشگاه</h3>
+            </div>
+            <div id="dashboard-weekly-classes" class="p-4 space-y-2.5 text-xs"></div>
+          </div>
+
+          <!-- مباحث ضعیف و مرورهای فاصله‌دار سررسید شده -->
+          <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="px-4 py-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+              <h3 class="font-bold text-slate-800 text-sm">مباحث نیازمند مرور و نقاط ضعف</h3>
+              <button onclick="app.navigate('assessments')" class="text-[11px] text-brand-600 hover:underline">سنجش تسلط</button>
+            </div>
+            <div id="dashboard-weak-topics" class="p-4 space-y-2.5 text-xs"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- صفحه ۲: مشاور هوشمند تحصیلی (Conversational AI Workspace) -->
+    <section id="view-advisor" class="view-section hidden">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- بخش چت و ورود زبان طبیعی -->
+        <div class="lg:col-span-2 bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col h-[76vh]">
+          <div class="px-5 py-3.5 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h2 class="font-bold text-slate-800 text-sm md:text-base">میز کار گفتگو با مشاور ارشد برنامه‌ریزی تاریخ ایران</h2>
+              <p class="text-xs text-slate-500">اطلاعات دروس، منابع، تاریخ امتحانات یا تغییرات برنامه خود را به فارسی طبیعی بنویسید</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <button onclick="app.insertSamplePrompt()" class="text-xs bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 px-2.5 py-1 rounded transition">
+                درج نمونه پیام استاندارد
+              </button>
+              <button onclick="app.clearChatHistoryPrompt()" class="text-xs text-slate-500 hover:text-rose-600 px-2 py-1">
+                پاکسازی گفتگو
+              </button>
+            </div>
+          </div>
+
+          <!-- لیست پیام‌ها -->
+          <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50/50"></div>
+
+          <!-- فرم ارسال پیام -->
+          <form onsubmit="app.handleChatSubmit(event)" class="p-3 bg-white border-t border-slate-200">
+            <div class="flex flex-col gap-2">
+              <textarea id="chat-input" rows="3" placeholder="مثال: این ترم چهار درس دارم. تاریخ صفویه دو واحد است. کلاس آن سه‌شنبه از ساعت ۱۰ تا ۱۲ برگزار می‌شود. امتحانش ۲۵ دی است. منبع اصلی کتاب ساوری است و باید حدود ۳۰۰ صفحه بخوانم..." class="w-full rounded-lg border border-slate-300 p-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"></textarea>
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <div class="text-[11px] text-slate-500 flex items-center gap-2">
+                  <span>پشتیبانی از استخراج ساختاریافته Gemini + پارسر محلی پشتیبان</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <button type="submit" id="chat-submit-btn" class="bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold px-5 py-2 rounded-lg shadow-sm transition flex items-center gap-2">
+                    <span>ارسال و تحلیل هوشمند</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+
+        <!-- ستون چپ مشاور: پیش‌نویس‌های استخراج‌شده، تفکیک معرفتی و راهنما -->
+        <div class="space-y-4">
+          <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4 space-y-3">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+              <h3 class="font-bold text-slate-800 text-sm">پیش‌نویس رکوردهای استخراج‌شده جهت تایید</h3>
+              <span class="text-[11px] bg-brand-50 text-brand-700 px-2 py-0.5 rounded font-medium">کنترل قبل از ثبت</span>
+            </div>
+            <p class="text-xs text-slate-500 leading-relaxed">
+              هیچ تغییری بدون بررسی و تایید صریح شما در پایگاه داده ذخیره نمی‌شود. پیش از تایید می‌توانید مقادیر استخراج‌شده را ویرایش کنید:
+            </p>
+            <div id="advisor-proposals-container" class="space-y-3 max-h-[54vh] overflow-y-auto pr-1"></div>
+          </div>
+
+          <div class="bg-brand-900 text-slate-100 rounded-xl p-4 text-xs space-y-2 shadow-sm">
+            <h4 class="font-bold text-amber-300 text-sm">اصول تفکیک اطلاعات در مشاور هوشمند:</h4>
+            <ul class="space-y-1.5 list-disc list-inside text-slate-200 leading-relaxed">
+              <li><strong class="text-emerald-300">اطلاعات قطعی دانشجو:</strong> داده‌های صریح مانند روز کلاس یا نام درس.</li>
+              <li><strong class="text-amber-300">تخمین‌های دانشجو:</strong> مواردی مانند «حدود ۳۰۰ صفحه» که تا زمان ثبت دقیق به عنوان تخمین علامت‌گذاری می‌شوند.</li>
+              <li><strong class="text-sky-300">پیشنهادهای هوش مصنوعی:</strong> روش‌های مطالعه (مانند جدول گاهشمار یا نقد منبع برای تاریخ صفویه).</li>
+              <li><strong class="text-rose-300">اطلاعات ناقص یا مبهم:</strong> مواردی که دستیار بدون حدس زدن جعلی، از شما می‌پرسد (مانند سال امتحان یا بارم‌بندی).</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- صفحه ۳: مدیریت دروس و نیمسال‌ها -->
+    <section id="view-courses" class="view-section hidden space-y-6">
+      <!-- مدیریت نیمسال تحصیلی -->
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+        <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 pb-4 mb-4">
+          <div>
+            <h2 class="font-bold text-slate-800 text-base">نیمسال‌های تحصیلی (ترم‌ها)</h2>
+            <p class="text-xs text-slate-500">تعریف بازه زمانی نیمسال به تقویم هجری شمسی (مثال: ۱۴۰۵/۰۷/۰۱ تا ۱۴۰۵/۱۱/۳۰)</p>
+          </div>
+          <div class="space-y-2">
+            <form onsubmit="app.saveSemester(event)" class="flex flex-wrap items-end gap-2 text-xs">
+              <input type="hidden" id="sem-id" />
+              <div>
+                <label class="block text-slate-600 mb-1">عنوان نیمسال *</label>
+                <input type="text" id="sem-title" required placeholder="نیمسال اول ۱۴۰۵-۱۴۰۶" class="border border-slate-300 rounded px-2.5 py-1.5 w-44" />
+              </div>
+              <div>
+                <label class="block text-slate-600 mb-1">شروع ترم (شمسی) *</label>
+                <input type="text" id="sem-start" required placeholder="1405/07/01" class="border border-slate-300 rounded px-2.5 py-1.5 w-28 ltr-inline text-center" />
+              </div>
+              <div>
+                <label class="block text-slate-600 mb-1">پایان امتحانات (شمسی) *</label>
+                <input type="text" id="sem-end" required placeholder="1405/11/15" class="border border-slate-300 rounded px-2.5 py-1.5 w-28 ltr-inline text-center" />
+              </div>
+              <button type="submit" class="bg-brand-600 hover:bg-brand-700 text-white font-semibold px-3.5 py-1.5 rounded transition">
+                ثبت / بروزرسانی نیمسال
+              </button>
+            </form>
+            <div class="flex items-center gap-1.5 text-[11px] text-slate-500">
+              <span>الگوهای پیش‌فرض:</span>
+              <button type="button" onclick="app.setSemesterPreset('fall')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-2 py-0.5 rounded border border-slate-300">ترم پاییز (مهر تا بهمن)</button>
+              <button type="button" onclick="app.setSemesterPreset('spring')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-2 py-0.5 rounded border border-slate-300">ترم بهار (بهمن تا تیر)</button>
+            </div>
+          </div>
+        </div>
+        <div id="semesters-list" class="flex flex-wrap gap-2"></div>
+      </div>
+
+      <!-- فرم ثبت / ویرایش درس -->
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+        <div class="flex items-center justify-between border-b border-slate-200 pb-3 mb-4">
+          <h3 class="font-bold text-slate-800 text-base" id="course-form-title">افزودن درس جدید به نیمسال</h3>
+          <button type="button" onclick="app.resetCourseForm()" class="text-xs text-slate-500 hover:text-slate-800">پاک کردن فرم</button>
+        </div>
+
+        <form onsubmit="app.saveCourse(event)" class="space-y-4 text-xs md:text-sm">
+          <input type="hidden" id="course-id" />
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div>
+              <label class="block text-slate-700 font-medium mb-1">نام درس *</label>
+              <input type="text" id="course-name" required placeholder="مثال: تاریخ ایران در عصر صفویه" class="w-full border border-slate-300 rounded-lg px-3 py-2" />
+            </div>
+            <div>
+              <label class="block text-slate-700 font-medium mb-1">کد درس (اختیاری)</label>
+              <input type="text" id="course-code" placeholder="مثال: ۱۲۳۴۵۶" class="w-full border border-slate-300 rounded-lg px-3 py-2" />
+            </div>
+            <div>
+              <label class="block text-slate-700 font-medium mb-1">نیمسال تحصیلی *</label>
+              <select id="course-semester" required class="w-full border border-slate-300 rounded-lg px-3 py-2 bg-white"></select>
+            </div>
+            <div>
+              <label class="block text-slate-700 font-medium mb-1">تعداد واحد *</label>
+              <input type="number" id="course-units" min="1" max="6" step="0.5" value="2" required class="w-full border border-slate-300 rounded-lg px-3 py-2" />
+            </div>
+
+            <div>
+              <label class="block text-slate-700 font-medium mb-1">نام استاد (اختیاری)</label>
+              <input type="text" id="course-instructor" placeholder="مثال: دکتر ..." class="w-full border border-slate-300 rounded-lg px-3 py-2" />
+            </div>
+            <div>
+              <label class="block text-slate-700 font-medium mb-1">روز برگزاری کلاس</label>
+              <select id="course-class-day" class="w-full border border-slate-300 rounded-lg px-3 py-2 bg-white">
+                <option value="">بدون کلاس هفتگی ثابت (پژوهشی / آزاد)</option>
+                <option value="نامشخص">نامشخص / در انتظار هماهنگی استاد</option>
+                <option value="شنبه">شنبه</option>
+                <option value="یکشنبه">یکشنبه</option>
+                <option value="دوشنبه">دوشنبه</option>
+                <option value="سه‌شنبه">سه‌شنبه</option>
+                <option value="چهارشنبه">چهارشنبه</option>
+                <option value="پنجشنبه">پنجشنبه</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-slate-700 font-medium mb-1">ساعت شروع و پایان کلاس</label>
+              <div class="flex items-center gap-1">
+                <input type="time" id="course-class-start" value="10:00" class="w-1/2 border border-slate-300 rounded-lg px-2 py-2 ltr-inline" />
+                <span>تا</span>
+                <input type="time" id="course-class-end" value="12:00" class="w-1/2 border border-slate-300 rounded-lg px-2 py-2 ltr-inline" />
+              </div>
+            </div>
+            <div>
+              <div class="flex items-center justify-between mb-1">
+                <label class="block text-slate-700 font-medium">تاریخ و ساعت امتحان پایانی</label>
+                <div class="flex gap-1">
+                  <button type="button" onclick="document.getElementById('course-exam-date').value='نامشخص'" class="text-[10px] text-amber-800 bg-amber-50 hover:bg-amber-100 px-1.5 py-0.5 rounded border border-amber-300">هنوز مشخص نیست</button>
+                  <button type="button" onclick="document.getElementById('course-exam-date').value='ندارد'; document.getElementById('course-exam-format').value='no_written_exam';" class="text-[10px] text-indigo-800 bg-indigo-50 hover:bg-indigo-100 px-1.5 py-0.5 rounded border border-indigo-200">بدون آزمون (ندارد)</button>
+                </div>
+              </div>
+              <div class="flex items-center gap-1">
+                <input type="text" id="course-exam-date" placeholder="1405/10/25 یا نامشخص یا ندارد" class="w-3/5 border border-slate-300 rounded-lg px-2 py-2 ltr-inline text-center" />
+                <input type="time" id="course-exam-time" value="09:00" class="w-2/5 border border-slate-300 rounded-lg px-2 py-2 ltr-inline" />
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-slate-700 font-medium mb-1">فرمت امتحان و ارزیابی اصلی</label>
+              <select id="course-exam-format" class="w-full border border-slate-300 rounded-lg px-3 py-2 bg-white">
+                <option value="unknown" selected>نامشخص / هنوز توسط استاد تعیین نشده</option>
+                <option value="no_written_exam">بدون آزمون کتبی (صرفاً پژوهش / سمینار)</option>
+                <option value="essay_analytical">تشریحی تحلیلی و استدلالی</option>
+                <option value="historiographical">نقد منبع و تحلیل تاریخ‌نگارانه</option>
+                <option value="research_paper">مقاله پژوهشی / سمینار کلاسی</option>
+                <option value="factual_chronological">کوتاه‌پاسخ / گاهشمار و وقایع‌نگاری</option>
+                <option value="oral">امتحان شفاهی</option>
+                <option value="mixed">ترکیبی (تشریحی + پژوهش)</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-slate-700 font-medium mb-1">نمره هدف (از ۲۰)</label>
+              <input type="number" id="course-target-grade" min="10" max="20" step="0.25" value="19" class="w-full border border-slate-300 rounded-lg px-3 py-2" />
+            </div>
+            <div>
+              <label class="block text-slate-700 font-medium mb-1">درجه دشواری درس</label>
+              <select id="course-difficulty" class="w-full border border-slate-300 rounded-lg px-3 py-2 bg-white">
+                <option value="0">نامشخص / ارزیابی‌نشده</option>
+                <option value="1">۱ - بسیار ساده</option>
+                <option value="2">۲ - نسبتاً ساده</option>
+                <option value="3" selected>۳ - متوسط</option>
+                <option value="4">۴ - دشوار و حجیم</option>
+                <option value="5">۵ - بسیار سنگین و تخصصی</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-slate-700 font-medium mb-1">تسلط اولیه شما (۰ تا ۱۰۰٪)</label>
+              <input type="number" id="course-mastery" min="0" max="100" value="20" class="w-full border border-slate-300 rounded-lg px-3 py-2" />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+            <div>
+              <div class="flex items-center justify-between mb-1">
+                <label class="block text-slate-700 font-medium">ترکیب بارم‌بندی از ۲۰ نمره</label>
+                <label class="flex items-center gap-1 text-[11px] text-amber-800 cursor-pointer">
+                  <input type="checkbox" id="weights-unknown" onchange="app.toggleWeightsUnknown(this.checked)" />
+                  <span>هنوز اعلام نشده</span>
+                </label>
+              </div>
+              <div id="weights-inputs-container" class="grid grid-cols-3 gap-2">
+                <div>
+                  <span class="text-[11px] text-slate-500">امتحان پایانی</span>
+                  <input type="number" id="weight-final" min="0" max="20" step="0.5" value="14" class="w-full border border-slate-300 rounded px-2 py-1.5" />
+                </div>
+                <div>
+                  <span class="text-[11px] text-slate-500">مقاله / پژوهش</span>
+                  <input type="number" id="weight-paper" min="0" max="20" step="0.5" value="4" class="w-full border border-slate-300 rounded px-2 py-1.5" />
+                </div>
+                <div>
+                  <span class="text-[11px] text-slate-500">ارائه / تکلیف</span>
+                  <input type="number" id="weight-class" min="0" max="20" step="0.5" value="2" class="w-full border border-slate-300 rounded px-2 py-1.5" />
+                </div>
+              </div>
+            </div>
+            <div>
+              <div class="flex items-center justify-between mb-1">
+                <label class="block text-slate-700 font-medium">مهلت تحویل مقاله / تکلیف و الزامات</label>
+                <div class="flex gap-1">
+                  <button type="button" onclick="document.getElementById('course-assignment-date').value='نامشخص'" class="text-[10px] text-amber-800 bg-amber-50 hover:bg-amber-100 px-1.5 py-0.5 rounded border border-amber-300">نامشخص</button>
+                  <button type="button" onclick="document.getElementById('course-assignment-date').value='ندارد'" class="text-[10px] text-slate-700 bg-slate-100 hover:bg-slate-200 px-1.5 py-0.5 rounded border border-slate-300">ندارد</button>
+                </div>
+              </div>
+              <div class="flex gap-2">
+                <input type="text" id="course-assignment-date" placeholder="مهلت: 1405/09/30 یا نامشخص یا ندارد" class="w-1/3 border border-slate-300 rounded-lg px-2.5 py-1.5 ltr-inline text-center" />
+                <input type="text" id="course-requirements" placeholder="مثال: مقایسه روایت اسکندربیگ منشی با منجم یزدی..." class="w-2/3 border border-slate-300 rounded-lg px-3 py-1.5" />
+              </div>
+            </div>
+          </div>
+
+          <!-- بخش اختصاصی توضیحات بخش‌های نامشخص درس -->
+          <div class="bg-amber-50/70 p-3 rounded-lg border border-amber-200">
+            <label class="block text-amber-900 font-semibold mb-1 text-xs">توضیحات موارد نامشخص، بلاتکلیف یا در انتظار اعلام استاد (اختیاری):</label>
+            <input type="text" id="course-pending-notes" placeholder="مثال: استاد هنوز مشخص نکرده امتحان تشریحی است یا نقد منبع؛ تاریخ امتحان هم اواخر ترم مشخص می‌شود یا فعلاً نیازی به تعیین نیست..." class="w-full border border-amber-300 rounded-lg px-3 py-2 text-xs bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-amber-500" />
+          </div>
+
+          <div id="course-conflict-warning" class="hidden bg-rose-50 border border-rose-300 text-rose-800 px-4 py-2.5 rounded-lg text-xs font-medium"></div>
+
+          <div class="flex justify-end gap-2 pt-2">
+            <button type="submit" class="bg-brand-600 hover:bg-brand-700 text-white font-semibold px-6 py-2 rounded-lg shadow-sm transition">
+              ذخیره و اعتبارسنجی درس
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- لیست دروس ثبت‌شده -->
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="px-5 py-3.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+          <h3 class="font-bold text-slate-800 text-base">فهرست دروس ثبت‌شده و وضعیت تداخل‌سنجی</h3>
+          <span id="courses-total-units" class="text-xs font-semibold text-brand-700 bg-brand-50 px-2.5 py-1 rounded">جمع واحدها: ۰</span>
+        </div>
+        <div id="courses-table-container" class="p-4 overflow-x-auto"></div>
+      </div>
+    </section>
+
+    <!-- صفحه ۴: مدیریت منابع و متون تاریخی -->
+    <section id="view-resources" class="view-section hidden space-y-6">
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+        <div class="flex items-center justify-between border-b border-slate-200 pb-3 mb-4">
+          <div>
+            <h2 class="font-bold text-slate-800 text-base" id="resource-form-title">افزودن منبع مطالعاتی (کتاب، مقاله، متن کهن، جزوه)</h2>
+            <p class="text-xs text-slate-500">امکان تعریف بازه‌های دقیق صفحات (مانند 35-72, 100-150) و بارگذاری محتوای متنی یا سرفصل واقعی</p>
+          </div>
+          <button type="button" onclick="app.resetResourceForm()" class="text-xs text-slate-500 hover:text-slate-800">پاک کردن فرم</button>
+        </div>
+
+        <form onsubmit="app.saveResource(event)" class="space-y-4 text-xs md:text-sm">
+          <input type="hidden" id="res-id" />
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div>
+              <label class="block text-slate-700 font-medium mb-1">درس مرتبط *</label>
+              <select id="res-course" required class="w-full border border-slate-300 rounded-lg px-3 py-2 bg-white"></select>
+            </div>
+            <div>
+              <label class="block text-slate-700 font-medium mb-1">عنوان منبع *</label>
+              <input type="text" id="res-title" required placeholder="مثال: ایران عصر صفوی" class="w-full border border-slate-300 rounded-lg px-3 py-2" />
+            </div>
+            <div>
+              <label class="block text-slate-700 font-medium mb-1">نویسنده / مصحح / مترجم</label>
+              <input type="text" id="res-author" placeholder="مثال: راجر ساوری (ترجمه کامبیز عزیزی)" class="w-full border border-slate-300 rounded-lg px-3 py-2" />
+            </div>
+            <div>
+              <label class="block text-slate-700 font-medium mb-1">نوع منبع و وضعیت الزام</label>
+              <div class="flex gap-2">
+                <select id="res-type" class="w-1/2 border border-slate-300 rounded-lg px-2 py-2 bg-white">
+                  <option value="book">کتاب</option>
+                  <option value="primary_source">متن و منبع دست اول کهن</option>
+                  <option value="article">مقاله علمی-پژوهشی</option>
+                  <option value="notes">جزوه کلاسی / فیش‌ها</option>
+                  <option value="syllabus">سرفصل درس</option>
+                  <option value="unknown">نامشخص / در حال بررسی</option>
+                </select>
+                <select id="res-required" class="w-1/2 border border-slate-300 rounded-lg px-2 py-2 bg-white">
+                  <option value="required">منبع اصلی (الزامی)</option>
+                  <option value="supplementary">منبع کمک‌آموزشی (فرعی)</option>
+                  <option value="unknown">نامشخص / موکول به نظر استاد</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <div class="flex items-center justify-between mb-1">
+                <label class="block text-slate-700 font-medium">تعداد کل صفحات منبع</label>
+                <button type="button" onclick="document.getElementById('res-total-pages').value=''" class="text-[10px] text-amber-800 bg-amber-50 hover:bg-amber-100 px-1.5 py-0.5 rounded border border-amber-300">نامشخص</button>
+              </div>
+              <input type="number" id="res-total-pages" placeholder="اختیاری (مثال: 300 یا خالی اگر نامشخص است)" class="w-full border border-slate-300 rounded-lg px-3 py-2" />
+            </div>
+            <div>
+              <div class="flex items-center justify-between mb-1">
+                <label class="block text-slate-700 font-medium">صفحات یا فصول امتحانی</label>
+                <div class="flex gap-1">
+                  <button type="button" onclick="document.getElementById('res-ranges').value='نامشخص'" class="text-[10px] text-amber-800 bg-amber-50 hover:bg-amber-100 px-1.5 py-0.5 rounded border border-amber-300">هنوز اعلام نشده</button>
+                  <button type="button" onclick="const tp=document.getElementById('res-total-pages').value; document.getElementById('res-ranges').value=tp ? '1-'+tp : 'کل منبع';" class="text-[10px] text-slate-700 bg-slate-100 hover:bg-slate-200 px-1.5 py-0.5 rounded border border-slate-300">کل منبع</button>
+                </div>
+              </div>
+              <input type="text" id="res-ranges" placeholder="اختیاری - مثال: 1-300 یا 35-72 (یا خالی/نامشخص)" class="w-full border border-slate-300 rounded-lg px-3 py-2 ltr-inline" />
+            </div>
+            <div>
+              <label class="block text-slate-700 font-medium mb-1">سرعت مطالعه تخمینی (صفحه در ساعت)</label>
+              <input type="number" id="res-speed" min="2" max="60" value="15" class="w-full border border-slate-300 rounded-lg px-3 py-2" />
+            </div>
+            <div>
+              <label class="block text-slate-700 font-medium mb-1">صفحات مطالعه‌شده تا این لحظه</label>
+              <input type="number" id="res-completed-pages" min="0" value="0" class="w-full border border-slate-300 rounded-lg px-3 py-2" />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label class="block text-slate-700 font-medium mb-1">موقعیت فعلی / فصل جاری</label>
+              <input type="text" id="res-position" placeholder="مثال: ابتدای فصل دوم، یا هنوز شروع نشده / نامشخص" class="w-full border border-slate-300 rounded-lg px-3 py-2" />
+            </div>
+            <div>
+              <label class="block text-slate-700 font-medium mb-1">درجه اهمیت و دشواری متن</label>
+              <div class="flex gap-2">
+                <select id="res-importance" class="w-1/2 border border-slate-300 rounded-lg px-2 py-2 bg-white">
+                  <option value="high">اهمیت بالا (محور سوالات امتحان)</option>
+                  <option value="medium">اهمیت متوسط</option>
+                  <option value="low">اهمیت مکمل</option>
+                  <option value="unknown">نامشخص / هنوز ارزیابی نشده</option>
+                </select>
+                <select id="res-difficulty" class="w-1/2 border border-slate-300 rounded-lg px-2 py-2 bg-white">
+                  <option value="normal">نثر روان پژوهشی</option>
+                  <option value="dense">متن سنگین / تحلیلی</option>
+                  <option value="archaic">نثر کهن و مصنوع (نیازمند رمزگشایی)</option>
+                  <option value="unknown">نامشخص</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <label class="block text-slate-700 font-medium mb-1">بارگذاری فایل متنی سرفصل یا یادداشت (.txt / .md)</label>
+              <input type="file" id="res-file-upload" accept=".txt,.md" onchange="app.handleResourceFileUpload(event)" class="w-full text-xs border border-slate-300 rounded-lg p-1.5 bg-slate-50" />
+            </div>
+          </div>
+
+          <!-- بخش اختصاصی توضیحات بخش‌های نامشخص منبع -->
+          <div class="bg-amber-50/70 p-3 rounded-lg border border-amber-200">
+            <label class="block text-amber-900 font-semibold mb-1 text-xs">توضیحات وضعیت منبع و موارد نامشخص (اختیاری):</label>
+            <input type="text" id="res-pending-notes" placeholder="مثال: استاد هنوز فصول امتحانی را مشخص نکرده؛ یا شاید کتاب دیگری را جایگزین کند؛ فصول حذفی آخر ترم اعلام می‌شود..." class="w-full border border-amber-300 rounded-lg px-3 py-2 text-xs bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-amber-500" />
+          </div>
+
+          <div>
+            <label class="block text-slate-700 font-medium mb-1">یادداشت‌ها، سرفصل‌های واقعی یا گزیده متن منبع (بدون جعل سرفصل توسط هوش مصنوعی)</label>
+            <textarea id="res-notes" rows="2" placeholder="سرفصل‌های واقعی کتاب یا نکات استاد درباره این منبع را اینجا وارد کنید یا از طریق دکمه بارگذاری فایل بالا اضافه نمایید..." class="w-full border border-slate-300 rounded-lg p-2.5"></textarea>
+          </div>
+
+          <div class="flex justify-end">
+            <button type="submit" class="bg-brand-600 hover:bg-brand-700 text-white font-semibold px-6 py-2 rounded-lg shadow-sm transition">
+              ثبت منبع و محاسبه حجم مطالعه
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- فهرست منابع -->
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="px-5 py-3.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+          <h3 class="font-bold text-slate-800 text-base">کتابخانه منابع نیمسال و وضعیت پیشروی واقعی</h3>
+          <span id="resources-summary-badge" class="text-xs text-slate-600"></span>
+        </div>
+        <div id="resources-list-container" class="p-4 space-y-3"></div>
+      </div>
+    </section>
+
+    <!-- صفحه ۵: تقویم جلالی و برنامه زمانبندی -->
+    <section id="view-calendar" class="view-section hidden space-y-6">
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+        <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 pb-4 mb-4">
+          <div>
+            <h2 class="font-bold text-slate-800 text-base">تقویم تحصیلی هجری شمسی و برنامه جلسات</h2>
+            <p class="text-xs text-slate-500">تفکیک بصری کلاس‌های دانشگاه، جلسات مطالعه، مرورهای فاصله‌دار، مهلت پژوهش و امتحانات</p>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2 text-xs">
+            <div class="inline-flex rounded-lg border border-slate-300 overflow-hidden">
+              <button onclick="app.setCalendarMode('daily')" id="cal-mode-daily" class="px-3 py-1.5 bg-white hover:bg-slate-50 font-medium">نمای روزانه</button>
+              <button onclick="app.setCalendarMode('weekly')" id="cal-mode-weekly" class="px-3 py-1.5 bg-brand-600 text-white font-medium">نمای هفتگی</button>
+              <button onclick="app.setCalendarMode('monthly')" id="cal-mode-monthly" class="px-3 py-1.5 bg-white hover:bg-slate-50 font-medium">نمای ماهانه جلالی</button>
+            </div>
+            <div class="flex items-center gap-1 bg-slate-100 rounded-lg p-1 border border-slate-200">
+              <button onclick="app.shiftCalendar(-1)" class="px-2.5 py-1 hover:bg-white rounded font-bold">قبلی</button>
+              <button onclick="app.resetCalendarToToday()" class="px-2.5 py-1 bg-white rounded shadow-sm font-semibold text-brand-700">امروز</button>
+              <button onclick="app.shiftCalendar(1)" class="px-2.5 py-1 hover:bg-white rounded font-bold">بعدی</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- راهنمای رنگ‌ها -->
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-4 text-xs">
+          <div id="calendar-range-label" class="font-bold text-slate-800 text-sm"></div>
+          <div class="flex flex-wrap items-center gap-3">
+            <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-indigo-100 border border-indigo-400"></span> کلاس دانشگاه</span>
+            <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-sky-100 border border-sky-400"></span> مطالعه و فیش‌برداری</span>
+            <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-amber-100 border border-amber-400"></span> مرور با فاصله و بازیابی</span>
+            <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-purple-100 border border-purple-400"></span> نگارش استدلالی و نقد منبع</span>
+            <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-rose-100 border border-rose-500"></span> امتحان پایانی / ددلاین</span>
+          </div>
+        </div>
+
+        <!-- محتوای تقویم -->
+        <div id="calendar-grid-container" class="min-h-[420px]"></div>
+      </div>
+    </section>
+
+    <!-- صفحه ۶: جزئیات وظایف، ثبت پیشرفت واقعی و بازبرنامه‌ریزی تطبیقی -->
+    <section id="view-tasks" class="view-section hidden space-y-6">
+      <!-- پنل ثبت سریع جلسه مطالعه یا تغییر برنامه -->
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-3 mb-4">
+          <div>
+            <h2 class="font-bold text-slate-800 text-base">مدیریت جلسات مطالعه و پایش تطبیقی برنامه</h2>
+            <p class="text-xs text-slate-500">ثبت تکمیل کامل، تکمیل جزئی یا از دست رفتن جلسه به همراه زمان واقعی صرف‌شده و صفحات خوانده‌شده</p>
+          </div>
+          <div class="flex flex-wrap gap-2 text-xs">
+            <button onclick="app.openManualTaskModal()" class="bg-slate-800 hover:bg-slate-900 text-white font-semibold px-3.5 py-2 rounded-lg transition">
+              + افزودن دستی جلسه مطالعه
+            </button>
+            <button onclick="app.runScheduleEngineModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-3.5 py-2 rounded-lg transition">
+              بازمحاسبه هوشمند جلسات باقیمانده
+            </button>
+          </div>
+        </div>
+
+        <!-- فیلتر وظایف -->
+        <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 mb-4 text-xs">
+          <select id="filter-task-course" onchange="app.renderTasksView()" class="border border-slate-300 rounded-lg px-3 py-2 bg-white">
+            <option value="all">همه دروس</option>
+          </select>
+          <select id="filter-task-status" onchange="app.renderTasksView()" class="border border-slate-300 rounded-lg px-3 py-2 bg-white">
+            <option value="all">همه وضعیت‌ها</option>
+            <option value="pending">در انتظار انجام</option>
+            <option value="completed">تکمیل‌شده</option>
+            <option value="partial">تکمیل جزئی</option>
+            <option value="missed">انجام‌نشده / عقب‌افتاده</option>
+            <option value="cancelled">لغو / تعلیق‌شده توسط استاد</option>
+          </select>
+          <select id="filter-task-activity" onchange="app.renderTasksView()" class="border border-slate-300 rounded-lg px-3 py-2 bg-white">
+            <option value="all">همه روش‌های مطالعه</option>
+            <option value="initial_reading">مطالعه اولیه متن</option>
+            <option value="analytical_notes">یادداشت‌برداری تحلیلی و فیش‌برداری</option>
+            <option value="chronology">بازسازی گاهشمار و توالی وقایع</option>
+            <option value="source_criticism">نقد منبع و مقایسه روایت‌ها</option>
+            <option value="historiography">مقایسه دیدگاه‌های تاریخ‌نگارانه</option>
+            <option value="research_paper">پژوهش و نگارش مقاله</option>
+            <option value="spaced_review">مرور با فاصله و بازیابی فعال</option>
+            <option value="essay_practice">نگارش پاسخ تشریحی و استدلال‌بندی</option>
+            <option value="timed_exam">آزمون آزمایشی زمان‌دار</option>
+            <option value="final_revision">جمع‌بندی نهایی پیش از امتحان</option>
+          </select>
+          <input type="text" id="filter-task-date" oninput="app.renderTasksView()" placeholder="فیلتر تاریخ شمسی (مثال: 1405/10)" class="border border-slate-300 rounded-lg px-3 py-2 ltr-inline text-center" />
+        </div>
+
+        <!-- لیست وظایف -->
+        <div id="tasks-list-container" class="space-y-3"></div>
+      </div>
+    </section>
+
+    <!-- صفحه ۷: سنجش تسلط، آزمون‌های آزمایشی و تحلیل تاریخ‌نگارانه -->
+    <section id="view-assessments" class="view-section hidden space-y-6">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- فرم ثبت آزمون آزمایشی / تمرین تشریحی -->
+        <div class="lg:col-span-1 bg-white rounded-xl border border-slate-200 shadow-sm p-5 space-y-4">
+          <h2 class="font-bold text-slate-800 text-base border-b border-slate-200 pb-2">ثبت نتیجه خودآزمایی و تمرین تشریحی</h2>
+          <form onsubmit="app.saveAssessmentLog(event)" class="space-y-3 text-xs">
+            <div>
+              <label class="block text-slate-700 font-medium mb-1">درس مرتبط *</label>
+              <select id="assess-course" required class="w-full border border-slate-300 rounded-lg px-3 py-2 bg-white"></select>
+            </div>
+            <div>
+              <label class="block text-slate-700 font-medium mb-1">مبحث یا بازه تاریخی *</label>
+              <input type="text" id="assess-topic" required placeholder="مثال: اصلاحات نظامی شاه عباس اول و ساختار قزلباش" class="w-full border border-slate-300 rounded-lg px-3 py-2" />
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="block text-slate-700 font-medium mb-1">نوع سنجش *</label>
+                <select id="assess-type" class="w-full border border-slate-300 rounded-lg px-2 py-2 bg-white">
+                  <option value="essay">نگارش پاسخ تشریحی استدلالی</option>
+                  <option value="timed_exam">آزمون شبیه‌سازی زمان‌دار</option>
+                  <option value="source_critique">نقد منبع و مقایسه متون کهن</option>
+                  <option value="recall">بازیابی فعال و گاهشمار</option>
+                  <option value="self_eval">خودارزیابی ذهنی (غیرآزمونی)</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-slate-700 font-medium mb-1">دسته‌بندی تخصصی تاریخ</label>
+                <select id="assess-category" class="w-full border border-slate-300 rounded-lg px-2 py-2 bg-white">
+                  <option value="dynasty_politics">سلسله‌ها، نهادها و تاریخ سیاسی</option>
+                  <option value="socio_economic">تحولات اجتماعی، نظامی و اقتصادی</option>
+                  <option value="historiography">دیدگاه‌های تاریخ‌نگارانه</option>
+                  <option value="source_critique">نقد منبع و تبارشناسی گزارش‌ها</option>
+                  <option value="chronology">گاهشماری، اصطلاحات و توالی علّی</option>
+                </select>
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <div class="flex items-center justify-between mb-1">
+                  <label class="block text-slate-700 font-medium">نمره کسب‌شده (از ۲۰)</label>
+                  <label class="flex items-center gap-1 text-[10px] text-amber-800 cursor-pointer">
+                    <input type="checkbox" id="assess-score-unknown" onchange="app.toggleAssessScoreUnknown(this.checked)" />
+                    <span>سنجش کیفی (بدون نمره)</span>
+                  </label>
+                </div>
+                <input type="number" id="assess-score" min="0" max="20" step="0.25" value="17.5" class="w-full border border-slate-300 rounded-lg px-3 py-2" />
+              </div>
+              <div>
+                <label class="block text-slate-700 font-medium mb-1">درصد تسلط ذهنی (۰-۱۰۰) *</label>
+                <input type="number" id="assess-mastery" min="0" max="100" value="75" required class="w-full border border-slate-300 rounded-lg px-3 py-2" />
+              </div>
+            </div>
+            <div>
+              <label class="block text-slate-700 font-medium mb-1">تحلیل خطاها و نقاط ضعف شناسایی‌شده</label>
+              <textarea id="assess-errors" rows="3" placeholder="مثال: فراموشی تاریخ دقیق عهدنامه زهاب؛ ضعف در مقایسه دیدگاه سیوری و رویمر درباره علل انحطاط صفویه..." class="w-full border border-slate-300 rounded-lg p-2.5"></textarea>
+            </div>
+            <button type="submit" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold py-2 rounded-lg shadow-sm transition">
+              ثبت سنجش و بروزرسانی فاصله مرور بعدی
+            </button>
+          </form>
+
+          <!-- تولیدکننده سوال تشریحی و نقد پاسخ با Gemini -->
+          <div class="border-t border-slate-200 pt-4 space-y-2">
+            <h3 class="font-bold text-slate-800 text-xs">طراحی سوال تشریحی و سنجش با Gemini (بر پایه متون ثبت‌شده شما)</h3>
+            <p class="text-[11px] text-slate-500">بدون جعل فکت یا ارجاع ساختگی؛ صرفاً بر اساس سرفصل و یادداشت‌های واقعی درس انتخاب‌شده:</p>
+            <button onclick="app.generateHistoryPracticePrompt()" class="w-full bg-persian-turquoise hover:bg-teal-800 text-white text-xs font-semibold py-2 rounded-lg transition">
+              درخواست طرح سوال تحلیلی / نقد منبع در میز مشاور
+            </button>
+          </div>
+        </div>
+
+        <!-- جدول تسلط موضوعی، منحنی فراموشی و آمادگی امتحان -->
+        <div class="lg:col-span-2 space-y-6">
+          <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="px-5 py-3.5 bg-slate-50 border-b border-slate-200">
+              <h3 class="font-bold text-slate-800 text-sm md:text-base">جدول تسلط موضوعی و زمانبندی مرور با فاصله (Spaced Repetition)</h3>
+              <p class="text-xs text-slate-500">مباحث با نمره کمتر از ۱۷ یا تسلط زیر ۷۵٪ به طور خودکار در اولویت مرور مجدد قرار می‌گیرند</p>
+            </div>
+            <div id="mastery-topics-container" class="p-4 overflow-x-auto"></div>
+          </div>
+
+          <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="px-5 py-3.5 bg-slate-50 border-b border-slate-200">
+              <h3 class="font-bold text-slate-800 text-sm md:text-base">سوابق آزمون‌های آزمایشی و تحلیل خطاها</h3>
+            </div>
+            <div id="assessments-log-container" class="p-4 space-y-3"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- صفحه ۸: خروجی PDF / Markdown و مدیریت پشتیبان محلی -->
+    <section id="view-exports" class="view-section hidden space-y-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- خروجی PDF و Markdown -->
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5 space-y-4">
+          <h2 class="font-bold text-slate-800 text-base border-b border-slate-200 pb-2">تولید خروجی استاندارد PDF و Markdown</h2>
+          <p class="text-xs text-slate-600 leading-relaxed">
+            خروجی‌ها مستقیماً از آخرین داده‌های ذخیره‌شده تولید می‌شوند. خروجی PDF با چیدمان کامل راست‌به‌چپ (RTL)، فونت وزیرمتن، شماره صفحه و پشتیبانی کامل از متون ترکیبی فارسی و انگلیسی تولید می‌گردد.
+          </p>
+
+          <div class="space-y-3 text-xs">
+            <div>
+              <label class="block text-slate-700 font-medium mb-1">محدوده گزارش خروجی</label>
+              <select id="export-scope" onchange="app.toggleExportScopeFilters()" class="w-full border border-slate-300 rounded-lg px-3 py-2 bg-white">
+                <option value="full_semester">برنامه کامل نیمسال تحصیلی (همه دروس و جلسات)</option>
+                <option value="weekly">برنامه هفتگی جاری (۷ روز پیش رو)</option>
+                <option value="single_course">گزارش اختصاصی یک درس</option>
+                <option value="date_range">بازه زمانی انتخابی (شمسی)</option>
+              </select>
+            </div>
+
+            <div id="export-course-filter" class="hidden">
+              <label class="block text-slate-700 font-medium mb-1">انتخاب درس</label>
+              <select id="export-course-id" class="w-full border border-slate-300 rounded-lg px-3 py-2 bg-white"></select>
+            </div>
+
+            <div id="export-date-filter" class="hidden grid grid-cols-2 gap-2">
+              <div>
+                <label class="block text-slate-700 font-medium mb-1">از تاریخ (شمسی)</label>
+                <input type="text" id="export-start-date" placeholder="1405/08/01" class="w-full border border-slate-300 rounded-lg px-3 py-2 ltr-inline text-center" />
+              </div>
+              <div>
+                <label class="block text-slate-700 font-medium mb-1">تا تاریخ (شمسی)</label>
+                <input type="text" id="export-end-date" placeholder="1405/08/30" class="w-full border border-slate-300 rounded-lg px-3 py-2 ltr-inline text-center" />
+              </div>
+            </div>
+
+            <div class="space-y-1.5 pt-2">
+              <label class="block text-slate-700 font-medium">بخش‌های موجود در سند خروجی:</label>
+              <div class="grid grid-cols-2 gap-2 text-slate-700">
+                <label class="flex items-center gap-1.5"><input type="checkbox" id="exp-inc-courses" checked /> خلاصه دروس و امتحانات</label>
+                <label class="flex items-center gap-1.5"><input type="checkbox" id="exp-inc-resources" checked /> منابع و تکالیف صفحات</label>
+                <label class="flex items-center gap-1.5"><input type="checkbox" id="exp-inc-schedule" checked /> برنامه زمانبندی جلسات</label>
+                <label class="flex items-center gap-1.5"><input type="checkbox" id="exp-inc-mastery" checked /> گزارش پیشرفت و آمادگی</label>
+              </div>
+            </div>
+
+            <div class="flex flex-wrap gap-3 pt-3">
+              <button onclick="app.exportPDFDocument()" class="bg-brand-600 hover:bg-brand-700 text-white font-semibold px-4 py-2.5 rounded-lg shadow-sm transition flex-1">
+                تولید و چاپ PDF استاندارد (RTL)
+              </button>
+              <button onclick="app.exportMarkdownDocument()" class="bg-slate-800 hover:bg-slate-900 text-white font-semibold px-4 py-2.5 rounded-lg shadow-sm transition flex-1">
+                دانلود فایل Markdown (.md)
+              </button>
+              <button onclick="app.exportICalendarFile()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 py-2.5 rounded-lg shadow-sm transition flex-1 flex items-center justify-center gap-1.5" title="خروجی تقویم استاندارد برای گوشی‌های اندروید و آیفون">
+                <span>📱 دانلود فایل تقویم موبایل (.ics)</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- پشتیبان‌گیری JSON و مدیریت داده‌های محلی IndexedDB -->
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5 space-y-4">
+          <h2 class="font-bold text-slate-800 text-base border-b border-slate-200 pb-2">پشتیبان‌گیری JSON و مدیریت پایگاه داده محلی</h2>
+          <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-900 space-y-1 leading-relaxed">
+            <p class="font-bold">توجه مهم درباره حریم خصوصی و ذخیره‌سازی محلی:</p>
+            <p>کلیه رکوردهای تحصیلی شما صرفاً در پایگاه داده مرورگر (`IndexedDB`) روی همین دستگاه ذخیره می‌شوند و به هیچ فضای ابری ارسال نمی‌گردند. پاک کردن داده‌های سایت در مرورگر (Clear Site Data) می‌تواند منجر به حذف اطلاعات شود و اطلاعات به صورت خودکار بین دستگاه‌های مختلف همگام‌سازی نمی‌شود. توصیه می‌شود به صورت دوره‌ای فایل پشتیبان JSON تهیه کنید.</p>
+          </div>
+
+          <div class="space-y-3 text-xs">
+            <div class="flex flex-wrap gap-3">
+              <button onclick="app.exportFullBackupJSON()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-4 py-2.5 rounded-lg shadow-sm transition flex-1">
+                دریافت فایل پشتیبان کامل (JSON)
+              </button>
+              <label class="bg-sky-600 hover:bg-sky-700 text-white font-semibold px-4 py-2.5 rounded-lg shadow-sm transition flex-1 text-center cursor-pointer">
+                <span>بازگردانی از فایل پشتیبان (JSON)</span>
+                <input type="file" accept=".json" onchange="app.importBackupJSON(event)" class="hidden" />
+              </label>
+            </div>
+
+            <div class="border-t border-slate-200 pt-4 flex items-center justify-between">
+              <div>
+                <h4 class="font-bold text-rose-700">حذف کامل داده‌های تحصیلی ذخیره‌شده</h4>
+                <p class="text-[11px] text-slate-500">این عملیات با دریافت تایید صریح، تمامی رکوردهای IndexedDB را پاک می‌کند.</p>
+              </div>
+              <button onclick="app.confirmWipeDatabase()" class="bg-rose-50 hover:bg-rose-600 hover:text-white text-rose-700 border border-rose-300 font-semibold px-3.5 py-2 rounded-lg transition">
+                پاکسازی کامل پایگاه داده
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- پیش‌نمایش زنده خروجی -->
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+        <div class="flex items-center justify-between border-b border-slate-200 pb-3 mb-4">
+          <h3 class="font-bold text-slate-800 text-sm">پیش‌نمایش زنده گزارش قابل چاپ / خروجی</h3>
+          <button onclick="app.refreshExportPreview()" class="text-xs text-brand-600 hover:underline">بروزرسانی پیش‌نمایش</button>
+        </div>
+        <div id="export-live-preview" class="border border-slate-200 rounded-lg p-6 bg-slate-50/40 max-h-[500px] overflow-y-auto text-xs"></div>
+      </div>
+    </section>
+
+    <!-- صفحه ۹: تنظیمات ظرفیت مطالعه و پیکربندی Gemini API -->
+    <section id="view-settings" class="view-section hidden space-y-6">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- تنظیمات ظرفیت مطالعه و ساعات بیداری دانشجو -->
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5 space-y-4">
+          <h2 class="font-bold text-slate-800 text-base border-b border-slate-200 pb-2">تنظیمات ساعات در دسترس و ظرفیت واقعی مطالعه</h2>
+          <form onsubmit="app.saveUserPreferences(event)" class="space-y-4 text-xs md:text-sm">
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-slate-700 font-medium mb-1">شروع بازه مطالعه روزانه</label>
+                <input type="time" id="pref-wake-start" value="08:00" class="w-full border border-slate-300 rounded-lg px-3 py-2 ltr-inline" />
+              </div>
+              <div>
+                <label class="block text-slate-700 font-medium mb-1">پایان بازه مطالعه شبانه</label>
+                <input type="time" id="pref-wake-end" value="22:00" class="w-full border border-slate-300 rounded-lg px-3 py-2 ltr-inline" />
+              </div>
+              <div>
+                <label class="block text-slate-700 font-medium mb-1">حداکثر ساعت مطالعه مفید روزانه</label>
+                <input type="number" id="pref-daily-max" min="1" max="14" step="0.5" value="6" class="w-full border border-slate-300 rounded-lg px-3 py-2" />
+              </div>
+              <div>
+                <label class="block text-slate-700 font-medium mb-1">حداکثر ظرفیت هفتگی (ساعت)</label>
+                <input type="number" id="pref-weekly-max" min="5" max="85" step="1" value="36" class="w-full border border-slate-300 rounded-lg px-3 py-2" />
+              </div>
+              <div>
+                <label class="block text-slate-700 font-medium mb-1">مدت هر نشست استاندارد مطالعه (دقیقه)</label>
+                <select id="pref-session-len" class="w-full border border-slate-300 rounded-lg px-3 py-2 bg-white">
+                  <option value="45">۴۵ دقیقه مطالعه + ۱۵ دقیقه استراحت</option>
+                  <option value="60">۶۰ دقیقه مطالعه متمرکز</option>
+                  <option value="75" selected>۷۵ دقیقه مطالعه عمیق متون تاریخی</option>
+                  <option value="90">۹۰ دقیقه بلوک پژوهشی کامل</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-slate-700 font-medium mb-1">ضریب ذخیره و جبران اتفاقات پیش‌بینی‌نشده (%)</label>
+                <select id="pref-buffer" class="w-full border border-slate-300 rounded-lg px-3 py-2 bg-white">
+                  <option value="15">۱۵٪ زمان جبرانی</option>
+                  <option value="20" selected>۲۰٪ زمان جبرانی (توصیه‌شده)</option>
+                  <option value="30">۳۰٪ زمان جبرانی (فشردگی کمتر)</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-slate-700 font-medium mb-1">تعهدات شخصی ثابت هفتگی (روزهای غیرقابل برنامه‌ریزی یا محدود)</label>
+              <input type="text" id="pref-commitments" placeholder="مثال: پنجشنبه‌ها عصر استراحت؛ جمعه‌ها حداکثر ۳ ساعت مطالعه" class="w-full border border-slate-300 rounded-lg px-3 py-2" />
+            </div>
+
+            <div class="flex justify-end">
+              <button type="submit" class="bg-brand-600 hover:bg-brand-700 text-white font-semibold px-5 py-2 rounded-lg shadow-sm transition">
+                ذخیره تنظیمات ظرفیت مطالعه
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- پیکربندی متمرکز Gemini API و امنیت کلید -->
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5 space-y-4">
+          <h2 class="font-bold text-slate-800 text-base border-b border-slate-200 pb-2">پیکربندی Gemini API و امنیت ارتباط</h2>
+          <div class="bg-slate-50 border border-slate-200 rounded-lg p-3 text-xs text-slate-700 space-y-1.5 leading-relaxed">
+            <p class="font-bold text-slate-900">شفافیت امنیتی اجرای بدون سرور (Direct Browser-to-Gemini):</p>
+            <p>از آنجا که این برنامه بدون سرور واسط و مستقیماً روی مرورگر شخصی شما اجرا می‌شود، کلید API شما هرگز در کد منبع قرار ندارد و به هیچ سرور ثالثی غیر از درگاه رسمی Google Gemini ارسال نمی‌شود. به صورت پیش‌فرض کلید تنها در حافظه موقت نشست (`sessionStorage`) نگهداری می‌شود و در فایل‌های پشتیبان JSON ذخیره نمی‌گردد.</p>
+          </div>
+
+          <form onsubmit="app.saveGeminiConfig(event)" class="space-y-4 text-xs md:text-sm">
+            <div>
+              <label class="block text-slate-700 font-medium mb-1">کلید اختصاصی Google Gemini API</label>
+              <input type="password" id="gemini-api-key" placeholder="AIzaSy..." class="w-full border border-slate-300 rounded-lg px-3 py-2 ltr-inline" />
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-slate-700 font-medium mb-1">مدل رسمی Gemini (پیکربندی متمرکز)</label>
+                <select id="gemini-model-id" class="w-full border border-slate-300 rounded-lg px-3 py-2 bg-white ltr-inline">
+                  <option value="gemini-3.8-flash" selected>gemini-3.8-flash (پیشنهادی گوگل، بسیار سریع و هوشمند)</option>
+                  <option value="gemini-3.1-pro-preview">gemini-3.1-pro-preview (تحلیل عمیق تاریخ‌نگارانه و استدلال پیشرفته)</option>
+                  <option value="gemini-3.5-flash-lite">gemini-3.5-flash-lite (سبک، کم‌مصرف و سریع)</option>
+                  <option value="gemini-3-flash-preview">gemini-3-flash-preview (پیش‌نمایش نسل ۳)</option>
+                </select>
+                <p class="text-[11px] text-slate-500 mt-1">مدل‌های نسل ۲.۵ طبق اعلام گوگل برای کلیدهای جدید محدود شده‌اند؛ برای دسترسی پایدار از مدل‌های نسل ۳ استفاده نمایید.</p>
+              </div>
+              <div>
+                <label class="block text-slate-700 font-medium mb-1">حالت ذخیره‌سازی کلید روی این دستگاه</label>
+                <select id="gemini-storage-mode" class="w-full border border-slate-300 rounded-lg px-3 py-2 bg-white">
+                  <option value="session">فقط در نشست فعلی مرورگر (SessionStorage - امن‌تر)</option>
+                  <option value="local">ذخیره در مرورگر شخصی (LocalStorage)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="flex flex-wrap items-center justify-between gap-2 pt-2">
+              <button type="button" onclick="app.testGeminiConnection()" class="bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold px-4 py-2 rounded-lg border border-slate-300 transition">
+                بررسی اتصال به Gemini API
+              </button>
+              <div class="flex gap-2">
+                <button type="button" onclick="app.clearGeminiKey()" class="text-rose-600 hover:bg-rose-50 px-3 py-2 rounded-lg transition">
+                  حذف کلید
+                </button>
+                <button type="submit" class="bg-brand-600 hover:bg-brand-700 text-white font-semibold px-5 py-2 rounded-lg shadow-sm transition">
+                  ذخیره تنظیمات هوش مصنوعی
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ظرف اختصاصی چاپ و تولید PDF استاندارد -->
+  <div id="print-container" class="hidden"></div>
+
+  <!-- مودال پیش‌نمایش و اعتبارسنجی برنامه تولیدشده (Schedule Validation & Diff Preview Modal) -->
+  <div id="schedule-modal" class="fixed inset-0 bg-slate-900/60 z-40 hidden items-center justify-center p-4 no-print">
+    <div class="bg-white rounded-2xl max-w-4xl w-full max-h-[88vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden">
+      <div class="px-6 py-4 bg-brand-900 text-white flex items-center justify-between">
+        <div>
+          <h3 class="font-bold text-base">پیش‌نمایش و اعتبارسنجی برنامه مطالعه (موتور زمانبندی قطعی)</h3>
+          <p class="text-xs text-slate-300">بررسی تداخل‌ها، ظرفیت هفتگی، پوشش صفحات تا روز امتحان و تغییرات تطبیقی</p>
+        </div>
+        <button onclick="app.closeScheduleModal()" class="text-slate-300 hover:text-white text-xl font-bold">&times;</button>
+      </div>
+      <div id="schedule-modal-body" class="p-6 overflow-y-auto space-y-4 text-xs md:text-sm flex-1"></div>
+      <div class="px-6 py-3.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
+        <span class="text-xs text-slate-500">جلسات تکمیل‌شده قبلی کاملاً حفظ می‌شوند و تغییر نمی‌کنند.</span>
+        <div class="flex gap-2">
+          <button onclick="app.closeScheduleModal()" class="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-100 text-xs font-semibold">انصراف</button>
+          <button id="btn-confirm-schedule" onclick="app.commitProposedSchedule()" class="px-5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-sm">
+            تایید و ثبت نهایی برنامه در تقویم
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- مودال ثبت دستی یا گزارش وضعیت انجام جلسه مطالعه -->
+  <div id="task-action-modal" class="fixed inset-0 bg-slate-900/60 z-40 hidden items-center justify-center p-4 no-print">
+    <div class="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-slate-200 overflow-hidden">
+      <div class="px-5 py-3.5 bg-slate-800 text-white flex items-center justify-between">
+        <h3 class="font-bold text-sm" id="task-modal-title">ثبت وضعیت جلسه مطالعه</h3>
+        <button onclick="app.closeTaskModal()" class="text-slate-300 hover:text-white text-lg font-bold">&times;</button>
+      </div>
+      <form onsubmit="app.submitTaskModal(event)" class="p-5 space-y-3 text-xs">
+        <input type="hidden" id="tm-id" />
+        <div>
+          <label class="block text-slate-700 font-medium mb-1">درس مرتبط *</label>
+          <select id="tm-course" required class="w-full border border-slate-300 rounded-lg px-3 py-2 bg-white"></select>
+        </div>
+        <div>
+          <label class="block text-slate-700 font-medium mb-1">عنوان و هدف جلسه *</label>
+          <input type="text" id="tm-title" required placeholder="مثال: مطالعه و فیش‌برداری صفحات ۳۵ تا ۵۵ ایران عصر صفوی" class="w-full border border-slate-300 rounded-lg px-3 py-2" />
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-slate-700 font-medium mb-1">تاریخ جلسه (شمسی) *</label>
+            <input type="text" id="tm-date" required placeholder="1405/08/12" class="w-full border border-slate-300 rounded-lg px-3 py-2 ltr-inline text-center" />
+          </div>
+          <div>
+            <label class="block text-slate-700 font-medium mb-1">روش فعالیت *</label>
+            <select id="tm-activity" class="w-full border border-slate-300 rounded-lg px-2 py-2 bg-white">
+              <option value="initial_reading">مطالعه اولیه متن</option>
+              <option value="analytical_notes">یادداشت‌برداری تحلیلی و فیش‌برداری</option>
+              <option value="chronology">بازسازی گاهشمار و توالی وقایع</option>
+              <option value="source_criticism">نقد منبع و مقایسه روایت‌ها</option>
+              <option value="historiography">مقایسه دیدگاه‌های تاریخ‌نگارانه</option>
+              <option value="research_paper">پژوهش و نگارش مقاله</option>
+              <option value="spaced_review">مرور با فاصله و بازیابی فعال</option>
+              <option value="essay_practice">نگارش پاسخ تشریحی و استدلال‌بندی</option>
+              <option value="timed_exam">آزمون آزمایشی زمان‌دار</option>
+              <option value="final_revision">جمع‌بندی نهایی پیش از امتحان</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-3 gap-2">
+          <div>
+            <label class="block text-slate-700 font-medium mb-1">ساعت شروع</label>
+            <input type="time" id="tm-start" value="14:00" class="w-full border border-slate-300 rounded-lg px-2 py-1.5 ltr-inline" />
+          </div>
+          <div>
+            <label class="block text-slate-700 font-medium mb-1">مدت برنامه (دقیقه)</label>
+            <input type="number" id="tm-duration" min="15" max="300" value="75" class="w-full border border-slate-300 rounded-lg px-2 py-1.5" />
+          </div>
+          <div>
+            <label class="block text-slate-700 font-medium mb-1">وضعیت انجام *</label>
+            <select id="tm-status" class="w-full border border-slate-300 rounded-lg px-2 py-1.5 bg-white font-semibold">
+              <option value="pending">در انتظار انجام</option>
+              <option value="completed">تکمیل کامل</option>
+              <option value="partial">تکمیل جزئی</option>
+              <option value="missed">انجام‌نشده (عقب‌افتاده)</option>
+              <option value="cancelled">لغو / تعلیق‌شده توسط استاد</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-2 bg-slate-50 p-3 rounded-lg border border-slate-200">
+          <div>
+            <label class="block text-slate-700 font-medium mb-1">زمان واقعی صرف‌شده (دقیقه)</label>
+            <input type="number" id="tm-actual-duration" min="0" max="400" value="0" class="w-full border border-slate-300 rounded px-2 py-1.5 bg-white" />
+          </div>
+          <div>
+            <label class="block text-slate-700 font-medium mb-1">تعداد صفحات خوانده‌شده در این نشست</label>
+            <input type="number" id="tm-pages-done" min="0" max="500" value="0" class="w-full border border-slate-300 rounded px-2 py-1.5 bg-white" />
+          </div>
+        </div>
+        <div>
+          <label class="block text-slate-700 font-medium mb-1">یادداشت یا علت عدم تکمیل / دشواری مبحث</label>
+          <textarea id="tm-notes" rows="2" placeholder="نکات کلیدی یا علت نیاز به زمان بیشتر..." class="w-full border border-slate-300 rounded-lg p-2"></textarea>
+        </div>
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" onclick="app.closeTaskModal()" class="px-4 py-2 rounded-lg border border-slate-300 text-slate-700">انصراف</button>
+          <button type="submit" class="px-5 py-2 rounded-lg bg-brand-600 hover:bg-brand-700 text-white font-semibold">ذخیره و بروزرسانی پیشرفت</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- مودال تایمر هوشمند پومودورو و پرورش گیاه / جنگل -->
+  <div id="pomodoro-modal" class="fixed inset-0 bg-slate-900/70 z-50 hidden items-center justify-center p-4 no-print backdrop-blur-sm">
+    <div class="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-slate-200 overflow-hidden flex flex-col">
+      <div class="px-5 py-3.5 bg-gradient-to-r from-emerald-800 to-teal-900 text-white flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="text-xl">⏱️</span>
+          <div>
+            <h3 class="font-bold text-sm">تایمر تمرکز پومودورو و پرورش گیاه</h3>
+            <p class="text-[10px] text-emerald-200">با هر چرخه مطالعه متمرکز، یک درخت به جنگل شما افزوده می‌شود</p>
+          </div>
+        </div>
+        <button onclick="app.closePomodoroModal()" class="text-emerald-200 hover:text-white text-lg font-bold">&times;</button>
+      </div>
+
+      <div class="p-6 space-y-5 text-center flex-1">
+        <!-- اطلاعات تسک متصل (در صورت انتخاب از روی برنامه) -->
+        <div id="pomo-task-info" class="hidden bg-slate-50 border border-slate-200 p-2.5 rounded-xl text-xs space-y-0.5 text-right">
+          <div class="font-bold text-slate-800 flex items-center justify-between">
+            <span id="pomo-course-name">تاریخ ایران در دوره اسلامی</span>
+            <span class="text-[10px] text-brand-600 bg-brand-50 px-2 py-0.5 rounded border border-brand-200" id="pomo-task-type">مطالعه عمیق</span>
+          </div>
+          <div class="text-slate-600 text-[11px]" id="pomo-task-title">فیش‌برداری تحلیلی منابع</div>
+        </div>
+
+        <!-- قاب پیشرفت دایره‌ای و گرافیک مرحله‌به‌مرحله گیاه -->
+        <div class="relative w-56 h-56 mx-auto flex items-center justify-center">
+          <svg class="w-full h-full -rotate-90" viewBox="0 0 200 200">
+            <!-- دایره پس‌زمینه -->
+            <circle cx="100" cy="100" r="88" fill="none" stroke="#f1f5f9" stroke-width="12" />
+            <!-- دایره پیشرفت انیمیشنی -->
+            <circle id="pomo-progress-circle" cx="100" cy="100" r="88" fill="none" stroke="#10b981" stroke-width="12"
+                    stroke-linecap="round" stroke-dasharray="552.92" stroke-dashoffset="0"
+                    class="transition-all duration-300" />
+          </svg>
+
+          <!-- گرافیک SVG زنده رشد گیاه در مرکز دایره -->
+          <div class="absolute inset-0 flex flex-col items-center justify-center p-6 pointer-events-none">
+            <div id="pomo-plant-stage-svg" class="w-20 h-20 flex items-center justify-center transition-all duration-500">
+              <!-- گیاه بر اساس مرحله در اینجا توسط JS رندر می‌شود -->
+            </div>
+            <div class="text-3xl font-extrabold text-slate-800 tracking-wider font-mono mt-1" id="pomo-time-display">25:00</div>
+            <div class="text-xs font-semibold text-emerald-700 mt-0.5" id="pomo-phase-label">نشست مطالعه متمرکز</div>
+          </div>
+        </div>
+
+        <!-- راهنمای مرحله رشد گیاه -->
+        <div class="flex items-center justify-center gap-1.5 text-[10px] text-slate-500 bg-slate-50 py-1.5 px-3 rounded-lg border border-slate-200">
+          <span id="pomo-stage-badge" class="font-bold text-emerald-700">مرحله ۱: بذر در خاک</span>
+          <span>•</span>
+          <span id="pomo-screen-lock-status" class="text-slate-400">صفحه روشن نگه داشته می‌شود</span>
+        </div>
+
+        <!-- انتخاب الگوی پومودورو -->
+        <div class="grid grid-cols-3 gap-2 text-xs">
+          <button type="button" onclick="app.setPomodoroPreset(25, 5)" class="pomo-preset-btn p-2 rounded-xl border border-slate-300 hover:border-emerald-500 font-medium bg-white transition active:bg-emerald-50">
+            ۲۵ / ۵ د
+          </button>
+          <button type="button" onclick="app.setPomodoroPreset(50, 10)" class="pomo-preset-btn p-2 rounded-xl border border-slate-300 hover:border-emerald-500 font-medium bg-white transition">
+            ۵۰ / ۱۰ د
+          </button>
+          <button type="button" onclick="app.setPomodoroPreset('custom')" class="pomo-preset-btn p-2 rounded-xl border border-slate-300 hover:border-emerald-500 font-medium bg-white transition">
+            مطابق جلسه
+          </button>
+        </div>
+
+        <!-- دکمه‌های کنترل تایمر -->
+        <div class="flex items-center justify-center gap-2 pt-1">
+          <button id="pomo-btn-toggle" onclick="app.togglePomodoro()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-6 py-2.5 rounded-xl shadow-md transition flex items-center gap-2 text-sm">
+            <span id="pomo-btn-icon">▶</span>
+            <span id="pomo-btn-label">شروع مطالعه</span>
+          </button>
+          <button onclick="app.skipPomodoroPhase()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium px-3 py-2.5 rounded-xl border border-slate-300 text-xs transition" title="رفتن به فاز بعدی">
+            ⏭️ فاز بعد
+          </button>
+          <button onclick="app.giveUpPomodoro()" class="bg-rose-50 hover:bg-rose-100 text-rose-700 font-medium px-3 py-2.5 rounded-xl border border-rose-300 text-xs transition" title="انصراف و تسلیم شدن">
+            🛑 لغو نشست
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- مودال آلارم تقویم و یادآوری فرارسیدن زمان مطالعه -->
+  <div id="alarm-modal" class="fixed inset-0 bg-slate-900/70 z-50 hidden items-center justify-center p-4 no-print backdrop-blur-sm">
+    <div class="bg-white rounded-3xl max-w-sm w-full shadow-2xl border-2 border-amber-400 overflow-hidden text-center p-6 space-y-4 animate-bounce-short">
+      <div class="w-16 h-16 mx-auto rounded-full bg-amber-100 text-amber-600 flex items-center justify-center text-3xl shadow-inner animate-pulse">
+        ⏰
+      </div>
+      <div>
+        <h3 class="font-extrabold text-base text-slate-900">وقت مطالعه برنامه‌ریزی‌شده فرا رسید!</h3>
+        <p class="text-xs text-slate-500 mt-1" id="alarm-time-subtitle">طبق جدول زمانبندی امروز</p>
+      </div>
+
+      <div class="bg-amber-50/80 border border-amber-200 p-3 rounded-2xl text-right text-xs space-y-1">
+        <div class="font-bold text-slate-900 text-sm" id="alarm-course-title">نام درس</div>
+        <div class="text-slate-700" id="alarm-task-objective">هدف جلسه مطالعه</div>
+        <div class="text-slate-500 text-[11px] flex justify-between pt-1">
+          <span>ساعت برنامه‌ریزی:</span>
+          <span class="font-bold text-brand-700 ltr-inline" id="alarm-task-time">10:00 - 11:15</span>
+        </div>
+      </div>
+
+      <div class="space-y-2 pt-2">
+        <button id="alarm-btn-start" onclick="app.startAlarmTaskWithPomodoro()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-4 rounded-xl shadow-md transition flex items-center justify-center gap-2 text-sm">
+          <span>🌱 شروع مستقیم تایمر این جلسه</span>
+        </button>
+        <div class="flex gap-2">
+          <button onclick="app.snoozeAlarm()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs py-2 rounded-xl border border-slate-300 transition">
+            ۵ دقیقه بعد یادآوری کن
+          </button>
+          <button onclick="app.dismissAlarm()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs py-2 rounded-xl border border-slate-300 transition">
+            بستن
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- اسکریپت اصلی کنترلر برنامه -->
+  <script src="app.js"></script>
+</body>
+</html>

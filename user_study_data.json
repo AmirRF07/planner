@@ -1,0 +1,28 @@
+{
+  "updatedAt": "2026-10-29T18:43:12.544Z",
+  "todayJalali": "1405/08/07",
+  "semesters": [
+    {
+      "id": "sem_1793299341380",
+      "title": "نیمسال اول ۱۴۰۵-۱۴۰۶",
+      "startDate": "1405/08/10",
+      "endDate": "1405/11/15"
+    }
+  ],
+  "courses": [],
+  "resources": [],
+  "tasks": [],
+  "assessments": [],
+  "mastery": [],
+  "forest": [],
+  "preferences": {
+    "wakingStart": "08:00",
+    "wakingEnd": "22:00",
+    "dailyMaxHours": 6,
+    "weeklyMaxHours": 36,
+    "sessionDurationMinutes": 75,
+    "bufferPercent": 20,
+    "commitments": "",
+    "timezone": "Asia/Tehran"
+  }
+}
